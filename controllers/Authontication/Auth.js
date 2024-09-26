@@ -7,6 +7,8 @@ const bcrypt = require("bcryptjs");
 //Used Models (user)
 const User = require("../../models/Users.js");
 
+//Node mailer
+const mailer = require("./Mails.js"); 
 
 async function register(req, res) {
     try {
@@ -18,13 +20,22 @@ async function register(req, res) {
             const hashedPassword = await bcrypt.hash(password, 10);
             const newUser = new User({username, email, password: hashedPassword, phone });
             await newUser.save()
-            console.log(newUser);
+            const token = jwt.sign(
+                { id: newUser.id}, 
+                process.env.JWT_KEY, 
+                { expiresIn: "15m" }
+            )
+            await mailer(email, token)
             res.status(200).json({ message: "User registred successfully" });
         }
     } catch (error) {
         res.status(500).json({
-            message : "Registration failed"
+            message : error
         })
     }
 
+}
+
+module.exports = {
+    register
 }
