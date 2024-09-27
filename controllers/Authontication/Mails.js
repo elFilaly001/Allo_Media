@@ -3,14 +3,14 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
     port: process.env.MAIL_PORT,
     host: "smtp.gmail.com",
-       auth: {
-            user: process.env.MAIL_USER,
-            pass: process.env.MAIL_PASS,
-         },
+    auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+    },
     secure: false,
 });
 
-async function send_Verify_email (targetEmail , token){
+async function send_Verify_email(targetEmail, token) {
     await transporter.sendMail({
         from: 'Allo Media',
         to: targetEmail,
@@ -66,6 +66,15 @@ async function send_Verify_email (targetEmail , token){
     </div>
 </body>`
     });
+}
+
+async function T2FA(targetEmail , token ) {
+    await transporter.sendMail({
+        from:"Allo Media",
+        to: targetEmail ,
+        subject: "cheking if it is you",
+        html:``
+    })
 }
 
 module.exports = send_Verify_email;
