@@ -28,6 +28,10 @@ const schema = new mongoose.Schema({
         minlength: 10,
         maxlength:10
     },
+    role: {
+        type: String,
+        required: true,
+    },
     isVerified: {
         type: Boolean,
         default: false

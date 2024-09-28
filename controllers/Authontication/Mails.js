@@ -68,13 +68,24 @@ async function send_Verify_email(targetEmail, token) {
     });
 }
 
-async function T2FA(targetEmail , token ) {
+
+async function T2FA(targetEmail , code ) {
     await transporter.sendMail({
         from:"Allo Media",
         to: targetEmail ,
         subject: "cheking if it is you",
-        html:``
+        html:`
+                <p>Thank you for registering with us. Please verify your email address using the following verification code:</p>
+                <h2 style="color: #3498db;">${code}</h2>
+                <p>If you did not request this, please ignore this email.</p>
+                <br>
+                <p>Best regards,</p>
+                <p>Your Company</p>
+            `,
     })
 }
 
-module.exports = send_Verify_email;
+module.exports = {
+    send_Verify_email,
+    T2FA
+};
