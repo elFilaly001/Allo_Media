@@ -107,30 +107,55 @@ async function ValidateOTPuser(req, res) {
     });
 }
 
-async function sendForgetPassEmail(req, res){
-    const email = req.body
-
-    const user  = await User.findOne({email : email});
-
-    if (!user){
-        return res.status(400).json({message : "user does not exist"})
+async function sendForgetPasswordEmail(req, res) {
+    try {
+        const { email } = req.body;  
+        const user = await User.findOne({ email: email });
+        if (!user) {
+            return res.status(400).json({ message: "User does not exist" });
+        }
+        const token = jwt.sign({ id: user._id }, process.env.JWT_KEY, {
+            expiresIn: "10m"
+        });
+        await mailer.ForgetPasswordEmail(email, token);
+        res.status(201).json({ message: "Email has been sent successfully" });
+    } catch (error) {
+        console.error("Error sending forget password email:", error);
+        res.status(500).json({ message: "An error occurred while sending the email" });
     }
-
-    const token = jwt.sign({id : user._id} , process.env.JWT_KEY, {
-        expiresIn: "10m"
-    })
-
-    
 }
 
-async function forgetPassword (req , res){
 
+async function forgetPassword (req , res){
+    try {
+        const {password , confirm_password} = req.body;
+        const token = req.query.token
+        const user_id = jwt.verify(token , process.env.JWT_KEY).id
+        const user =await User.findById(user_id);
+        console.log(user);
+
+        if(!user){
+            res.status(400).json({message : "User not found"})
+        }else{
+            if (password != confirm_password){
+                res.status(400).json({message : "check passwords"})
+            }else {
+                const newPass = await bcrypt.hash(password, 10);
+                user.password = newPass;
+                await user.save()
+            }
+        }
+       
+    } catch (error) {
+        console.error("Error sending forget password email:", error);
+        res.status(500).json({ message: error }); 
+    }
 }
 
 module.exports = {
     register,
     login,
     ValidateOTPuser,
-    sendForgetPassEmail,
+    sendForgetPasswordEmail,
     forgetPassword
 }
