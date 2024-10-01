@@ -3,6 +3,8 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const OTP = require("./OTPGen.js")
+
 
 //Used Models 
 const User = require("../../models/Users.js");
@@ -10,9 +12,6 @@ const User = require("../../models/Users.js");
 //Node mailer
 const mailer = require("./Mails.js");
 const Roles = require("./Roles.js");
-const { finished } = require("nodemailer/lib/xoauth2/index.js");
-// const { any } = require("joi");
-
 
 async function register(req, res) {
     try {
@@ -49,7 +48,7 @@ async function login(req, res) {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json({ error: 'user not found' });
+            return res.status(404).json({ error: 'user not found' });
         }
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
@@ -64,52 +63,140 @@ async function login(req, res) {
             await mailer.send_Verify_email(email, token)
             return res.status(401).json({ error: 'please verify your account' });
         } else {
-            let OTPcode = generateOTP();
-            await mailer.T2FA(email, OTPcode)
-            res.status(200).json({ message: "code sent successfully" });
+            // let OTPcode = generateOTP();
+            // await mailer.T2FA(email, OTPcode)
+            // const Rtoken = jwt.sign({
+            //     userId: user._id,
+            //     OTPcode: OTPcode
+            // }, process.env.JWT_KEY, {
+            //     expiresIn: "7m"
+            // });
+            // res.cookie('jwt', Rtoken, {
+            //     httpOnly: true,
+            //     secure: process.env.NODE_ENV === 'production',
+            //     sameSite: 'None',
+            //     maxAge: 7 * 24 * 60 * 1000 // 7 min 
+            // });
+
+            // let test = OTP.OTPExpires("15 m")
+            let test = OTP.OTP(8, "1d", user)
+            return res.status(201).json({ message: "code sent successfully" , token : test});
         }
-        const Rtoken = jwt.sign({
-            userId: user._id,
-            OTPcode: OTPcode
-        }, process.env.JWT_KEY, {
-            expiresIn: "7m"
-        });
-        res.cookies('jwt', Rtoken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'None',
-            maxAge: 7 * 24 * 60 * 1000 // 7 min 
-        });
     } catch (error) {
-        res.status(400).json({ error: 'Login failed' });
+        res.status(400).json({ error });
     }
 }
 
-function generateOTP(length = 6) {
-    return Math.floor(Math.random() * Math.pow(10, length))
-        .toString()
-        .padStart(length, '0');
+async function GetOTP(req, res) {
+    try {
+        const token = req.query.token
+        const decoded = jwt.verify(token, process.env.JWT_KEY);
+        // Access the decoded information (like userId, OTPcode)
+        const userId = decoded.userId;
+        const user = await User.findById(userId)
+        await OTP.VerifyOTP(user)
+    } catch (error) {
+        res.status(400).json({ error });
+    }
 }
 
-
 async function ValidateOTPuser(req, res) {
-    const code = req.body
-    const token = req.cookies.jwt
-    console.log(token);
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    // Access the decoded information (like userId, OTPcode)
-    const { userId, OTPcode } = decoded;
-    console.log(userId, OTPcode);
-    res.clearCookie('jwt', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'None'
-    });
+    // try {
+    //     const code = req.body.code
+    //     const token = req.cookies.jwt
+    //     // console.log(token);
+    //     const decoded = jwt.verify(token, process.env.JWT_KEY);
+    //     // Access the decoded information (like userId, OTPcode)
+    //     const { userId, OTPcode } = decoded;
+    //     console.log(userId, OTPcode);
+
+    //     const user = await User.findById(userId);
+    //     if (!user) {
+    //         res.status(404).json({
+    //             message: "user not found"
+    //         })
+    //     } else {
+
+    //         if (code != OTPcode) {
+    //             res.status(400).json({
+    //                 message: "please insert the code sent in your email adress"
+    //             })
+    //         } else {
+    //             res.clearCookie('jwt', {
+    //                 httpOnly: true,
+    //                 secure: process.env.NODE_ENV === 'production',
+    //                 sameSite: 'None'
+    //             });
+
+    //             const token = jwt.sign({
+    //                 userId: user._id,
+    //                 role: user.role,
+    //             }, process.env.JWT_KEY, {
+    //                 expiresIn: "15d"
+    //             });
+
+    //             res.cookie('jwtLogin', token, {
+    //                 httpOnly: true,
+    //                 secure: process.env.NODE_ENV === 'production',
+    //                 sameSite: 'None',
+    //                 maxAge: 15 * 24 * 60 * 1000
+    //             });
+    //         }
+    //         res.status(200).json({
+    //             message: "login verified successfully"
+    //         })
+    //     }
+    // } catch (error) {
+    //     res.status(400).json({ error })
+    // }
+
+    try {
+        const OTPinp = req.body.code;
+        const token = req.query.token
+        const decoded = jwt.verify(token, process.env.JWT_KEY);
+        // Access the decoded information (like userId, OTPcode)
+        const userId = decoded.userId;
+        const user = await User.findById(userId)
+        const OTPcode = await OTP.VerifyOTP(user)
+        console.log(OTPcode, OTPinp);
+
+        if (OTPcode === OTPinp) {
+            console.log("true");
+            res.clearCookie('jwt', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'None'
+            });
+
+            const token = jwt.sign({
+                userId: user._id,
+                role: user.role,
+            }, process.env.JWT_KEY, {
+                expiresIn: "15d"
+            });
+
+            res.cookie('jwtLogin', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'None',
+                maxAge: 15 * 24 * 60 * 1000
+            });
+
+        } else {
+            res.status(400).json({message : "please enter a valid code " })
+        }
+        res.status(200).json({
+                        message: "login verified successfully"
+                    })
+
+    } catch (error) {
+        res.status(400).json({ error });
+    }
 }
 
 async function sendForgetPasswordEmail(req, res) {
     try {
-        const { email } = req.body;  
+        const { email } = req.body;
         const user = await User.findOne({ email: email });
         if (!user) {
             return res.status(400).json({ message: "User does not exist" });
@@ -125,37 +212,36 @@ async function sendForgetPasswordEmail(req, res) {
     }
 }
 
-
-async function forgetPassword (req , res){
+async function forgetPassword(req, res) {
     try {
-        const {password , confirm_password} = req.body;
+        const { password, confirm_password } = req.body;
         const token = req.query.token
-        const user_id = jwt.verify(token , process.env.JWT_KEY).id
-        const user =await User.findById(user_id);
+        const user_id = jwt.verify(token, process.env.JWT_KEY).id
+        const user = await User.findById(user_id);
         console.log(user);
 
-        if(!user){
-            res.status(400).json({message : "User not found"})
-        }else{
-            if (password != confirm_password){
-                res.status(400).json({message : "check passwords"})
-            }else {
+        if (!user) {
+            res.status(400).json({ message: "User not found" })
+        } else {
+            if (password != confirm_password) {
+                res.status(400).json({ message: "check passwords" })
+            } else {
                 const newPass = await bcrypt.hash(password, 10);
                 user.password = newPass;
                 await user.save()
             }
         }
-       
+
     } catch (error) {
         console.error("Error sending forget password email:", error);
-        res.status(500).json({ message: error }); 
+        res.status(500).json({ message: error });
     }
 }
-
 module.exports = {
     register,
     login,
     ValidateOTPuser,
+    GetOTP,
     sendForgetPasswordEmail,
     forgetPassword
 }

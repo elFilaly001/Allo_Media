@@ -7,7 +7,8 @@
   "author": "",
   "license": "ISC",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "node --watch server.js"
   },
   "dependencies": {
     "@faker-js/faker": "^9.0.3",
@@ -19,7 +20,8 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.3",
-    "nodemailer": "^6.9.15"
+    "nodemailer": "^6.9.15",
+    "supertest": "^7.0.0"
   },
   "devDependencies": {
     "mocha": "^10.7.3"

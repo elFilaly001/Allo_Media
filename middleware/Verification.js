@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 //Used Models (user)
-const User = require("../../models/Users.js");
+const User = require("../models/Users.js");
 
 async function Verify_User(req, res) {
     try {

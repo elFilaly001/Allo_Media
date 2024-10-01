@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Auth = require("../controllers/Authontication/Auth.js")
-const Verification = require("../controllers/Authontication/Verification.js")
+const Verification = require("../middleware/Verification.js")
 const { validateRegister, validateLogin , validateEmail } = require('../middleware/Validation.js');
 
 

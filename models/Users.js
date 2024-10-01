@@ -36,6 +36,10 @@ const schema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    code:{
+        type: String,
+        default: null
+    },
     createdAt: {
         type: Date,
         default: currentDateTime 

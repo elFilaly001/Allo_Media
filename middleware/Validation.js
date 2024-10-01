@@ -26,11 +26,11 @@ const registerSchema = Joi.object({
             'string.min': 'Password must be at least 8 characters long',
         }),
     phone: Joi.string()
-        .pattern(/^0[0-9]{9}$/)
+        .pattern(/^[0-9]{10}$/)
         .required()
         .messages({
             'string.empty': 'Phone number is required',
-            'string.pattern.base': 'Phone number must start with 0 and contain 10 digits',
+            'string.pattern.base': 'Phone number must contain 10 digits',
         }),
     role: Joi.string()
         .valid('admin', 'user', 'moderator', 'joke') // Allowed roles
