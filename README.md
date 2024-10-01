@@ -38,7 +38,6 @@ This application is suitable for developers looking to integrate JWT-based authe
    
     # Mongodb URI
     DB_URI=
-    TEST_DB_URI=
    
     # JWT secret key
     JWT_SECRET=
