@@ -237,11 +237,21 @@ async function forgetPassword(req, res) {
         res.status(500).json({ message: error });
     }
 }
+
+function logout(req, res) {
+    try {
+        res.clearCookie('jwtLogin');
+        res.status(200).json({message: 'Logout successful'});
+    } catch (error) {
+        res.status(500).json({error: error.message});
+    }
+}
 module.exports = {
     register,
     login,
     ValidateOTPuser,
     GetOTP,
     sendForgetPasswordEmail,
-    forgetPassword
+    forgetPassword,
+    logout
 }
